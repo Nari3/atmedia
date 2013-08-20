@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<head>
+<meta charset="utf-8">
+<title>atmedia.js</title>
+<meta name="description" content="" />
+<meta name="keywords" content="" />
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes" />
+<meta name="format-detection" content="telephone=no" />
+
+<link rel="stylesheet" href="./resources/styles/basic.css" media="all">
+<!--[if lte IE 8 ]>
+  <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+<![endif]-->
+
+<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script src="./resources/scripts/atmedia-1.0.0.js"></script>
+<script src="./resources/scripts/atmedia.box_height.js"></script>
+<script src="./resources/scripts/sample.js"></script>
+
+<!-- syntaxhighlighter -->
+<script src="./syntaxhighlighter/scripts/shCore.js"></script>
+<script src="./syntaxhighlighter/scripts/shBrushJScript.js"></script>
+<script src="./syntaxhighlighter/scripts/shBrushXml.js"></script>
+<script src="./syntaxhighlighter/scripts/shBrushCss.js"></script>
+<link  rel="stylesheet" type="text/css" href="./syntaxhighlighter/styles/shCore.css"/>
+<link  rel="stylesheet" type="text/css" href="./syntaxhighlighter/styles/shThemeEclipse.css"/>
+<script>SyntaxHighlighter.all();</script>
+<!-- /syntaxhighlighter -->
+
+<style>
+@media screen and (min-width:787px) {/*large*/
+  #_device {
+    position: static;
+    display: none;
+  }
+}
+@media screen and (min-width:480px) and (max-width:786px) {/*medium*/
+  #_device {
+    position: relative;
+    display: none;
+  }
+}
+@media screen and (max-width:479px) {/*small*/
+  #_device {
+    position: absolute;
+    display: none;
+  }
+}
+@media screen and (orientation:landscape) {
+  #_slope {
+    position: relative;
+    display: none;
+  }
+}
+@media screen and (orientation:portrait) {
+  #_slope {
+    position: absolute;
+    display: none;
+  }
+}
+</style>
+
+</head>
+<body>
+
+<div id="container">
+
+  <div id="contenthead"><div id="contenthead_inner">
+
+    <h1>Responsive Framework atmedia.js (using jQuery)</h1>
+    <p class="update">2013.07.15 | <a href="#contact">Watanabe Keiichiro</a></p>
+
+    <div class="center">
+      <p class="btn"><a href="https://github.com/ahomegane/atMedia" target="_blank">&gt; ダウンロード (GitHub)</a></p>
+    </div>
+
+    <p>status (console.log)</p>
+    <div id="status"></div>
+
+  </div></div><!-- #contenthead -->
+
+  <div id="contentsarea">
+
+    <h2>スタイル(CSS)と動き(JavaScript)を同期させる</h2>
+
+    <p>レスポンシブのサイト制作においても、通常のサイト同様、JavaScriptが必要な場面が多々あります。<br>しかも、ビューによって動きが違ったり。</p>
+    <p>その際、window.innerWidthとかを拾って、実行制御をしていましたが、</p>
+    <ul>
+      <li>・ブラウザによってjsの幅判定とmedia queriesの幅判定が異なり、微妙に誤差が出る(スクロールバーの横幅とか)</li>
+      <li>・Androidの一部のブラウザでは、media queriesの指定をガン無視する</li>
+      <li>・そもそもIE8以下がmedia queriesに対応していない</li>
+    </ul>
+    <p>などいろいろ問題があったので、CSSと完全同期して実行制御が行えるjQueryプラグインを作りました。</p>
+
+    <h2>どういう処理をしているか</h2>
+
+    <p>内部的には、</p>
+    <ol>
+      <li>(0. 【手動】CSSで任意のIDの要素に、media別に値を指定)</li>
+      <li>1. DOMに指定したIDの要素を追加</li>
+      <li>2. 1の要素を監視し、cssの値が指定した値になったら、</li>
+      <li>3. 登録された関数を実行 ( publish / subscribe )</li>
+    </ol>
+    <p>しています。</p>
+
+    <h2>基本的な使い方 (本ページのソースのsample.js参照)</h2>
+
+    <ol>
+      <li>
+        <h3>1. [HTML] jQuery / atmedia.js　を読み込む</h3>
+        <pre class="brush: html;">
+          &lt;script src="/resources/jquery-1.9.1.min.js"&gt;&lt;/script&gt;
+          &lt;script src="/resources/scripts/atmedia-1.0.0.js"&gt;&lt;/script&gt;
+        </pre>
+        <ul class="notes">
+          <li>・jQueryのバージョンは1.7以上です。</li>
+          <li>・atmedia.jsは必ずjQueryの後に読み込んでください。</li>
+        </ul>
+      </li>
+      <li>
+        <h3>2. [JS] $.atmediaを実行する</h3>
+        <pre class="brush: js;">
+          %window.mynamespace% = $.atmedia({
+            deviceStyle: {
+              id: '%_device%',
+              style: {
+                %large%: {
+                  prop: '%position%',
+                  val: '%static%'
+                },
+                %medium%: {
+                  prop: '%position%',
+                  val: '%relative%'
+                },
+                %small%: {
+                  prop: '%position%',
+                  val: '%absolute%'
+                }
+              }
+            }
+          });
+        </pre>
+        <p>※ %-%の部分は任意指定。上記は例。</p>
+        <ul class="notes">
+          <li>・レスポンシブのmedia queriesと同期させたい場合は、引数として { deviceStyle: } を渡します。</li>
+          <li>・idはhtml要素のid名を指定します。</li>
+          <li>・style.FOO　の FOO(%large%, %medium%, %small%) は、"ステータス名"。<br>指定する数は自由です。</li>
+          <li>・propとvalの値は3のcssで指定した値を設定します。</li>
+          <li>・$.atmedia の戻り値は オブジェクト。<br>4での使用を踏まえ適切な名前空間(%window.mynamespace%)に解放して下さい。</li>
+        </ul>
+      </li>
+      <li>
+        <h3>3. [CSS] media別にCSSを指定</h3>
+        <pre class="brush: css;">
+          @media screen and (min-width:787px) {/*large*/
+            #_device {
+              position: static;              
+            }
+          }
+          @media screen and (min-width:480px) and (max-width:786px) {/*medium*/
+            #_device {
+              position: relative;
+            }
+          }
+          @media screen and (max-width:479px) {/*small*/
+            #_device {
+              position: absolute;
+            }
+          }
+        </pre>
+        <ul class="notes">
+          <li>・2のjsのpropとvalに上記で指定した値を設定します。</li>
+          <li>・DOMへの追加(空DIV)は atmdedia.js にて自動で行います。</li>
+          <li>・表示への影響が不安な場合は、適宜 display:none; を指定すると確実です。</li>
+          <li>・もちろん、外部CSSファイルへの指定でも問題ありません。</li>          
+        </ul>
+      </li>
+      <li>
+        <h3>4. [JS] ステータス別に関数を登録する</h3>
+        <pre class="brush: js;">
+          mynamespace.onchange(function(args) {
+            console.log('change');
+
+          }).onchange({
+            onLarge: function() {
+              renderStatus('onLarge');
+              $('body').css('background', '#0e83cd');
+            },
+            offLarge: function() {
+              renderStatus('offLarge');
+            },
+            onLargeResize: function() {
+              renderStatus('onLargeResize');
+            },  
+            onMedium: function() {
+              renderStatus('onMedium');
+              $('body').css('background', '#41ab6b');
+            },
+            offMedium: function() {
+              renderStatus('offMedium');
+            },
+            onMediumResize: function() {
+              renderStatus('onMediumResize');
+            },
+            onSmall: function() {
+              renderStatus('onSmall');
+              $('body').css('background', '#d54f30');
+            },
+            offSmall: function() {
+              renderStatus('offSmall');
+            },
+            onSmallResize: function() {
+              renderStatus('onSmallResize');
+            }
+          });
+        </pre>
+        <ul class="notes">
+          <li>・onchangeに関数を渡すと 　ステータス(ex. large/medium/small)が変わったタイミングで実行されます。</li>
+          <li>・onchangeに連想配列を渡すと ステータス別に指定が可能です。<br>
+            連想配列のkeyは、2で設定したステータス名を元に、
+            <ul class="notes mt0">
+              <li>on%Status%: %status% になったタイミングで実行</li>
+              <li>off%Status%: %status% 以外のステータスになったタイミングで実行</li>
+              <li>on%Status%Resize: %status%　のビューの画面リサイズのタイミングで実行</li>
+            </ul>
+            となります。
+          </li>
+          <li>・表示への影響が不安な場合は、適宜 display:none; を指定すると確実です。</li>
+          <li>・もちろん、外部CSSファイルへの指定でも問題ありません。</li>          
+        </ul>
+      </li>
+      <li></li>
+    </ol>
+
+    <h2>ちょっと複雑な使い方</h2>
+
+    <h3>1. publish / subscribe</h3>
+
+    <p>$.atmedia()の戻り値のオブジェクト(mynamespace)には、publish / subscribe の関数が設定されています。<br>changeイベントに以下のようにバインドすることも可能です。</p>
+
+    <pre class="brush: js;">
+      //subscribe: $(document).readyの直後に１度だけ発動
+      mynamespace.subscribe('ready/onchange', function() { ... });
+      mynamespace.subscribe('ready/onchange/onLarge', function() { ... });
+
+      //subscribe: $(window).resizeのタイミングで発動
+      mynamespace.subscribe('resize/onchange', function() { ... });
+      mynamespace.subscribe('resize/onchange/onLarge', function() { ... });
+    </pre>
+
+    <p>changeイベントのpublishのタイミングは、atmedia.js内で制御していますが、強制的に実行させることも可能です。</p>
+
+    <pre class="brush: js;">
+      //publish: $(window).resizeのタイミングで発動 (ready/onchangeは、一度実行されると2度目の実行はできません。)
+      mynamespace.publish('resize/onchange');
+      mynamespace.publish('resize/onchange/onLarge');
+    </pre>
+
+    <h3>2. CSSと同期するカスタムイベントを作成 (本ページのソースのsample.js "define custom event" 参照)</h3>
+
+    <p>$.atmedia()の戻り値のオブジェクト(mynamespace)には、onchangeのように独自でイベントを作成する方法が用意されています。</p>
+
+    <p>例) cssのorientationchangeに応じたイベントの作成</p>
+    <pre class="brush: js;">
+    $(function() {
+
+      //domに監視対象のelementを追加(別途CSSにpropとvalを設定)
+      var slope = mynamespace.defineElement({
+        id: '_slope',
+        style: {
+          portrait: {
+            prop: 'position',
+            val: 'absolute'
+          },
+          landscape: {
+            prop: 'position',
+            val: 'relative'
+          }
+        }
+      });
+
+      //カスタムイベント portrait / landscape　の設定
+      mynamespace.defineEvent({
+
+        //カスタムイベント名。複数登録可能
+        name: 'portrait landscape',
+
+        //親イベント名。複数登録は不可
+        parent: 'orientationchange',
+        
+        //監視対象のelement
+        el: slope,
+
+        //イベントの定義。親のイベント内で実行される
+        define: function() {
+          if (this.el.matchStatus('portrait')) {
+            this.publish('portrait');
+          } else if (this.el.matchStatus('landscape')) {
+            this.publish('landscape');
+          }
+        }
+
+      });
+
+      //作成したイベントにバインド。イベント名は 親イベント名 / 作成したカスタムイベント名
+      mynamespace.subscribe('ready/portrait', function() { ... });
+
+    });
+    </pre>
+
+    <h4>親イベントとは？</h4>
+
+    <p>本フレームワークには、'イベントツリー'という概念があります。</p>
+
+    <h5>イベントツリーのルートイベントは5つ。</h5>
+
+    <ul class="notes">
+      <li>・ready ($(document).ready)</li>
+      <li>・load ($(document).onload)</li>      
+      <li>・resize ($(window).onresize)</li>
+      <li>・scroll ($(window).onscroll)</li>
+      <li>・orientaionchange ($(window).onorientaionchange)</li>
+      <li>・custom (ブラウザイベントに属さない)</li>
+    </ul>
+
+    <h3>3. mynamespaceの拡張</h3>
+
+    <p>mynamespace.extend, mynamespace.includeにより拡張可能です。</p>
+
+    <pre class="brush: js;">
+    $(function() {
+
+      //mynamespaceにメンバを追加。mynamespace.fooとして呼び出せる
+      mynamespace.extend({ foo: function() { ... } }):
+
+      //mynamespace.prototypeにメンバを追加。mynamespace.fooとして呼び出せる
+      mynamespace.include({ foo: function() { ... } }):
+
+      //mynamespace.onchangeと同様にorientationchangeを追加する場合の例
+      mynamespace.include({
+        onPortrait: function(fn) {
+          mynamespace.subscribe('ready/portrait', fn);
+          mynamespace.subscribe('orientationchange/portrait', fn);
+          return this;
+        },
+        onLandscape: function(fn) {
+          mynamespace.subscribe('ready/landscape', fn);
+          mynamespace.subscribe('orientationchange/landscape', fn);
+          return this;
+        }
+      });
+
+    });
+    </pre>
+
+    <h2>バグ？</h2>
+
+    <ul class="notes">
+      <li>・IE8以下では、$(window).onresize が　htmlを読み込んだタイミングで実行される模様</li>
+    </ul>
+
+  </div><!-- #contentsarea -->
+
+  <div id="contentfoot"><div id="contentfoot_inner">
+
+    <h2 class="mt0" id="contact">Contact</h2>
+
+    <p>Watanabe Keiichiro</p>
+    <p><a href="https://www.facebook.com/ahomegane" target="_blank">https://www.facebook.com/ahomegane</a></p>
+
+  </div></div><!-- #contentfoot -->
+
+</div><!-- #container -->
+
+</body>
+</html>
